@@ -3,13 +3,31 @@ import subprocess
 import os
 import sys
 
-# Navigate to backend directory
-backend_path = os.path.join(os.getcwd(), 'backend')
+# Try multiple paths to find the backend
+backend_path = None
+search_dirs = [
+    '/vercel/share/v0-next-shadcn/backend',
+    '/vercel/share/v0-project/backend',
+    'backend',
+    '../backend',
+    '../../backend',
+]
 
-if not os.path.exists(backend_path):
-    print("[v0] Backend directory not found")
+print(f"[v0] Searching for backend directory...")
+
+for search_dir in search_dirs:
+    abs_path = os.path.abspath(search_dir)
+    print(f"[v0] Checking: {abs_path}")
+    if os.path.exists(abs_path) and os.path.isdir(abs_path):
+        backend_path = abs_path
+        print(f"[v0] Found backend!")
+        break
+
+if not backend_path:
+    print(f"[v0] Backend directory not found")
     sys.exit(1)
 
+print(f"[v0] Found backend at: {backend_path}")
 print("[v0] Generating Prisma client...")
 
 try:
@@ -18,28 +36,24 @@ try:
     
     if not os.path.exists(prisma_bin):
         print(f"[v0] Prisma binary not found at {prisma_bin}")
-        print("[v0] Trying alternative approach...")
-        # Try using node to run prisma
-        result = subprocess.run(
-            [sys.executable, '-m', 'subprocess'],
-            cwd=backend_path,
-            capture_output=True,
-            text=True
-        )
-    else:
-        result = subprocess.run(
-            [prisma_bin, 'generate'],
-            cwd=backend_path,
-            capture_output=True,
-            text=True
-        )
+        sys.exit(1)
+    
+    result = subprocess.run(
+        [prisma_bin, 'generate'],
+        cwd=backend_path,
+        capture_output=True,
+        text=True
+    )
+    
+    print(result.stdout)
+    if result.stderr:
+        print(f"[v0] stderr: {result.stderr}")
     
     if result.returncode != 0:
-        print(f"[v0] Error: {result.stderr}")
+        print(f"[v0] Error: return code {result.returncode}")
         sys.exit(1)
     
     print("[v0] ✓ Prisma client generated successfully!")
-    print(result.stdout)
     
 except Exception as e:
     print(f"[v0] Failed to generate Prisma client: {str(e)}")
