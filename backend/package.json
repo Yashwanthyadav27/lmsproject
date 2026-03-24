@@ -4,8 +4,9 @@
   "description": "LMS Backend API with Express.js and Prisma",
   "main": "dist/server.js",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && prisma generate",
     "start": "node dist/server.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
